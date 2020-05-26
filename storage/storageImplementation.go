@@ -8,7 +8,7 @@ type LocalStorage struct {
 	Cookie map[string]*model.User
 }
 
-func CreateStorage() *LocalStorage {
+func CreateLocalStorage() *LocalStorage {
 	return &LocalStorage {
 		Rooms: make(map[string]*model.Room),
 		Cookie: make(map[string]*model.User),
@@ -24,18 +24,22 @@ func (ls *LocalStorage) GetRoom(name string) (*model.Room, bool) {
 	return r, b
 }
 
-func (ls *LocalStorage) AddUser(room *model.Room, userName, cookie string) bool {
-	if _, exist := ls.Cookie[cookie]; exist {		// Если с такой кукой существует
-		return false
+func (ls *LocalStorage) GetRooms() (Rooms map[string]*model.Room) {
+	return ls.Rooms
+}
+
+func (ls *LocalStorage) AddUser(room *model.Room, userName, cookie string) string {
+	if _, exist := ls.Cookie[cookie]; exist {
+		return model.CookieExist
 	}
 
-	if _, exist := room.Users[userName]; exist {	// Если уже есть в этой комнате такое же имя
-		return false
+	if _, exist := room.Users[userName]; exist {
+		return model.NameDoublicate
 	} else {
 		newUserPtr := &model.User{Name: userName, Room: room, Messages: make([]*model.Message, 0)}
 		ls.Cookie[cookie] = newUserPtr
 		room.Users[userName] = newUserPtr
-		return true
+		return model.OK
 	}
 }
 

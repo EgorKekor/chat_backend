@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	model "github.com/EgorKekor/chat_backend/models"
-	st "github.com/EgorKekor/chat_backend/storage"
 	"github.com/fasthttp/websocket"
 	"github.com/valyala/fasthttp"
 	"log"
@@ -13,7 +12,7 @@ import (
 )
 
 
-func WsWorker(conn *websocket.Conn, storage st.Storage, user *model.User) {
+func WsWorker(conn *websocket.Conn, cookie string , user *model.User) {
 	defer conn.Close()
 	rooms := user.Rooms
 	ticker := time.NewTicker(2 * time.Second)
@@ -26,22 +25,21 @@ func WsWorker(conn *websocket.Conn, storage st.Storage, user *model.User) {
 			return nil
 		})
 
-		responseHistory := model.UpdateMessages{}
-		responseHistory.Type = "update_messages"
+		um := model.UpdateMessages{}
+		um.Type = "update_messages"
 
-		responseHistory.Content = make(map[string][]model.SerialisableHistoryRecord)
+		um.Content = make(map[string][]model.SerialisableHistoryRecord)
 		for roomName, room := range rooms {
-			responseHistory[roomName] = model.SerialisableHistoryRecord{room.NoWatched[user.Name], room.NoWatched[user.Messages]}
+			userLogin := room.UsersCookie[cookie]
+			hrs := room.NoWatched[userLogin]
+			for _, hr := range hrs {
+				um.Content[roomName] = append(um.Content[roomName], model.SerialisableHistoryRecord{hr.UserName, hr.Message.Text})
+			}
+
 		}
 
-		//for _, room := range rooms {
-		//	for _, record := range room.HistoryRecord {
-		//		responseHistory.Content = append(responseHistory.Content, model.SerialisableHistoryRecord{User: record.UserName, Message: record.Message.Text})
-		//	}
-		//}
 
-
-		resp, err := json.Marshal(responseHistory)
+		resp, err := json.Marshal(um)
 		if err != nil {
 			ticker.Stop()
 			break
@@ -74,7 +72,7 @@ func GetMessages(ctx *fasthttp.RequestCtx) {
 
 	if user, ok := storageManager.GetUserByCookie(cookie); ok {
 		err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
-			WsWorker(conn, storageManager, user)
+			WsWorker(conn, cookie, user)
 		})
 		if err != nil {
 			log.Println("Upgrade:", err)

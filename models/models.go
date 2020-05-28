@@ -29,8 +29,8 @@ type Message struct {
 
 type Room struct {
 	Name              string
-	//Users			  map[string]*User
-	UsersCookie		  map[string]*User
+	Users			  map[string]*User		// Логины
+	UsersCookie		  map[string]string		// Реальные юзеры каким логином зашли, логин навсегда для комнаты
 	HistoryRecord     []*HistoryRecord
 	NoWatched		  map[string][]*HistoryRecord	// Имя пользователя - непросмотренные сообщения
 }
@@ -43,6 +43,7 @@ func CreateRoom(name string) *Room {
 const OK = "Ok"
 const CookieExist = "This cookie exist"
 const NameDoublicate = "Doublicate name"
+const AlreadyLogined = "Already logined "
 const AlreadyExist = "Room already exist"
 const RoomNotExist = "Room not exist"
 const NoCookie = "No cookie"

@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	model "github.com/EgorKekor/chat_backend/models"
 )
 
@@ -22,6 +21,7 @@ func CreateLocalStorage() *LocalStorage {
 func (ls *LocalStorage) AddRoom(name string, room *model.Room) {
 	ls.Rooms[name] = room
 	ls.Rooms[name].Users = make(map[string]*model.User)
+	ls.Rooms[name].UsersCookie = make(map[string]string)
 	ls.Rooms[name].NoWatched = make(map[string][]*model.HistoryRecord)
 }
 
@@ -38,48 +38,36 @@ func (ls *LocalStorage) GetRooms() (Rooms map[string]*model.Room) {
 func (ls *LocalStorage) AddUser(room *model.Room, userName, cookie string) string {
 	userPtr, currentExist := ls.Cookie[cookie]
 
-	if currentExist {
-		if rooms, logined := userPtr.AllNames[userName]; logined {			// Уже заходил под таким именем
-			for _, visitedRoom := range rooms {								// Проверить все комнаты куда он под этим именем заходил
-				if visitedRoom == room {									// Если повторно заходит
-					return model.OK											// Тогда ОК
-				}
-			}
-		}
-	}
-
-	if dublicateUser, dublicateExist := room.Users[userName]; dublicateExist {
-		if currentExist && (userPtr != dublicateUser) {
-			return model.NameDoublicate
-		} else if currentExist {
-			fmt.Printf("Repeat enter cookie:%s  userName:%s\n")
-			return model.OK
+	if login, exist := room.UsersCookie[cookie]; exist { // Если заходил под каким либо логином
+		if login != userName {
+			return login //Не пустить под новым логином
 		} else {
-			return model.NameDoublicate
+			return model.OK // Пустить под старым логином
 		}
 	}
 
-	if currentExist {
-		userPtr.Rooms[room.Name] = room
-		room.Users[userName] = userPtr
-		userPtr.AllNames = make(map[string]*model.Room)
-		userPtr.AllNames[userName] = room
-	} else {
-		newUserPtr := &model.User{Name: userName, Rooms: make(map[string]*model.Room, 0), Messages: make([]*model.Message, 0)}
-		ls.Cookie[cookie] = newUserPtr
-		newUserPtr.Rooms[room.Name] = room
-		room.Users[userName] = newUserPtr
-		newUserPtr.AllNames = make(map[string]*model.Room)
-		newUserPtr.AllNames[userName] = room
+	if !currentExist {
+		userPtr = &model.User{
+			Name: userName,
+			Rooms: make(map[string]*model.Room),
+			AllNames: make(map[string][]*model.Room),
+			Messages: make([]*model.Message, 0)}
+		ls.Cookie[cookie] = userPtr
 	}
+
+	userPtr.Rooms[room.Name] = room
+	room.Users[userName] = userPtr
+	room.UsersCookie[cookie] = userName
+	userPtr.AllNames[userName] = append(userPtr.AllNames[userName], room)
+
 
 	return model.OK
 
 }
 
 func (ls *LocalStorage) ReadHistory(room *model.Room, userName string) {
-	if userHistoryList, exist := room.NoWatched[userName]; exist {
-		userHistoryList = userHistoryList[:0]
+	if _, exist := room.NoWatched[userName]; exist {
+		room.NoWatched[userName] = room.NoWatched[userName][:0]
 	}
 }
 

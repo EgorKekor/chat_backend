@@ -11,8 +11,7 @@ import (
 	"time"
 )
 
-
-func WsWorker(conn *websocket.Conn, cookie string , user *model.User) {
+func writeWoreker(conn *websocket.Conn, cookie string , user *model.User) {
 	defer conn.Close()
 	rooms := user.Rooms
 	ticker := time.NewTicker(2 * time.Second)
@@ -38,7 +37,6 @@ func WsWorker(conn *websocket.Conn, cookie string , user *model.User) {
 
 		}
 
-
 		resp, err := json.Marshal(um)
 		if err != nil {
 			ticker.Stop()
@@ -52,7 +50,13 @@ func WsWorker(conn *websocket.Conn, cookie string , user *model.User) {
 
 		<-ticker.C
 	}
-	return
+}
+
+
+func WsWorker(conn *websocket.Conn, cookie string , user *model.User) {
+	go writeWoreker(conn, cookie, user)
+	ch := make(chan int)
+	<-ch
 }
 
 

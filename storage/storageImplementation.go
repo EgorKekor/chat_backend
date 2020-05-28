@@ -46,6 +46,10 @@ func (ls *LocalStorage) AddUser(room *model.Room, userName, cookie string) strin
 		}
 	}
 
+	if _, dublicate := room.Users[userName]; dublicate {
+		return model.NameDoublicate
+	}
+
 	if !currentExist {
 		userPtr = &model.User{
 			Name: userName,
@@ -84,6 +88,17 @@ func (ls *LocalStorage) GetUserByCookie(cookie string) (*model.User, bool) {
 	}
 	return nil, false
 }
+
+func (ls *LocalStorage) GetUserLoginInRoomByCookie(roomName, cookie string) (string, bool) {
+	if r, existR := ls.Rooms[roomName]; existR {
+		if login, existL := r.UsersCookie[cookie]; existL {
+			return login, true
+		}
+		return "", false
+	}
+	return "", false
+}
+
 
 
 

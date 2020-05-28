@@ -8,6 +8,7 @@ type Storage interface  {
 	AddUser(room *model.Room, userName, cookie string) string
 	DeleteUser(cookie, roomName string, user *model.User)
 	GetUserByCookie(cookie string) (*model.User, bool)
+	GetUserLoginInRoomByCookie(roomName, cookie string) (string, bool)
 	AddMessage(userName, roomName, messageText string) bool
 	GetHistory(room *model.Room) []model.SerialisableHistoryRecord
 	GetRooms() (Rooms map[string]*model.Room)

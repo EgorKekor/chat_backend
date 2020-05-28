@@ -7,5 +7,5 @@ import (
 
 func main() {
 	rt := router.CreateRouter()
-	fasthttp.ListenAndServe(":8080", rt.Handler)
+	fasthttp.ListenAndServe(":8081", rt.Handler)
 }

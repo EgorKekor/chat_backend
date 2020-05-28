@@ -11,8 +11,8 @@ var upgrader websocket.FastHTTPUpgrader
 
 func init() {
 	upgrader = websocket.FastHTTPUpgrader{
-		ReadBufferSize:    4096,
-		WriteBufferSize:   4096,
+		ReadBufferSize:    1024,
+		WriteBufferSize:   1024,
 		CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
 			return true
 		},

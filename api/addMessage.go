@@ -9,10 +9,19 @@ import (
 )
 
 func AddMessage(ctx *fasthttp.RequestCtx) {
+	ctx.Response.Header.Set("Access-Control-Allow-Origin", "http://localhost:8080")
+	ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+	ctx.Response.Header.Set("Access-Control-Allow-Headers", "origin, content-type, content-length,accept")
+
+	roomName := ctx.UserValue("roomName").(string)
+	userName := ctx.UserValue("userName").(string)
+
 	var cookie string
 	if clientCookie := ctx.Request.Header.Peek("Cookie"); clientCookie == nil {
 		WriteResponse(ctx, http.StatusForbidden, model.ResponseMessage{model.NoCookie})
 		return
+	} else {
+		cookie = string(clientCookie)
 	}
 
 	var userMessage model.UserMessage
@@ -22,11 +31,21 @@ func AddMessage(ctx *fasthttp.RequestCtx) {
 		WriteResponse(ctx, http.StatusBadRequest, model.ResponseMessage{model.BadFormat})
 	}
 
-	if user, ok := storageManager.GetUserByCookie(cookie); ok {
-		storageManager.AddMessage(user, userMessage.Text)
-		WriteResponse(ctx, http.StatusOK, model.ResponseMessage{model.OK})
-		return
-	} else {
-		WriteResponse(ctx, http.StatusForbidden, model.ResponseMessage{model.NoGetUserByCookie})
+
+	storageManager.AddMessage(userName, roomName, userMessage.Text)
+
+	if room, rOk := storageManager.GetRoom(roomName); rOk {
+		if user, uOk := storageManager.GetUserByCookie(cookie); uOk {
+			storageManager.ReadHistory(room, user.Name)
+
+			response := model.AllMessages{}
+			response.Type = "room_history"
+			response.Content = storageManager.GetHistory(room)
+			WriteResponse(ctx, http.StatusOK, response)
+			return
+		}
 	}
+
+	WriteResponse(ctx, http.StatusForbidden, model.ResponseMessage{model.RoomNotExist})
+
 }

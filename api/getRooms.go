@@ -1,32 +1,28 @@
 package api
 
 import (
-	"encoding/json"
 	model "github.com/EgorKekor/chat_backend/models"
 	"github.com/valyala/fasthttp"
-	"log"
 	"net/http"
+	"strconv"
 )
 
+
 func GetRooms(ctx *fasthttp.RequestCtx) {
+	ctx.Response.Header.Set("Access-Control-Allow-Origin", "http://localhost:8080")
+	ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+	ctx.Response.Header.Set("Access-Control-Allow-Headers", "origin, content-type, content-length,accept")
+
 	rooms := storageManager.GetRooms()
 
 	responseContent := model.ResponseContent{}
 	responseContent.Type = model.ResponseTypeRooms
-	responseContent.Content = map[string]interface{}{}
+	responseContent.Content = map[string]string{}
 
-	responseContent.Content["a"] = 1
 	for _, room := range rooms {
-		responseContent.Content[room.Name] = len(room.Users)
+		responseContent.Content[room.Name] = strconv.Itoa(len(room.Users))
 	}
-
-	if jsonObject, err := json.Marshal(&responseContent); err != nil {
-		log.Println(err.Error())
-		WriteResponse(ctx, http.StatusInternalServerError, model.ResponseMessage{model.ServerError})
-	} else {
-		stringify := string(jsonObject)
-		WriteResponse(ctx, http.StatusOK, stringify)
-	}
+	WriteResponse(ctx, http.StatusOK, responseContent)
 
 	return
 }

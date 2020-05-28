@@ -6,7 +6,10 @@ import (
 	"net/http"
 )
 
+
 func LeaveRoom(ctx *fasthttp.RequestCtx) {
+	roomName := ctx.UserValue("roomName").(string)
+
 	var cookie string
 	if clientCookie := ctx.Request.Header.Peek("Cookie"); clientCookie == nil {
 		WriteResponse(ctx, http.StatusForbidden, model.ResponseMessage{model.NoCookie})
@@ -14,7 +17,7 @@ func LeaveRoom(ctx *fasthttp.RequestCtx) {
 	}
 
 	if user, ok := storageManager.GetUserByCookie(cookie); ok {
-		storageManager.DeleteUser(cookie, user)
+		storageManager.DeleteUser(cookie, roomName, user)
 		WriteResponse(ctx, http.StatusOK, model.ResponseMessage{model.OK})
 		return
 	} else {
